@@ -1,0 +1,499 @@
+# Copyright (c) 2017 Alessandro Menti
+#
+# This file is licensed under the terms and conditions of the MIT license.
+# See the LICENSE file for more details.
+
+# Additional object identifiers not defined by OpenSSL.
+oid_section = additional_oids
+
+[additional_oids]
+# OIDs used to assert {domain, organization, individual} validated certificate
+# compliance with the CA/Browser Forum Baseline Requirements ("CAB").
+cabDomainValidated = 2.23.140.1.2.1
+cabOrganizationValidated = 2.23.140.1.2.2
+cabIndividualValidated = 2.23.140.1.2.3
+# OID used to assert compliance of a code signing certificate with the
+# CA/Browser Forum "Minimum Requirements for the Issuance and Management of
+# Publicly-Trusted Code Signing Certificates" policy.
+cabCodeSigning = 2.23.140.1.4.1
+# OID used in the Extended Key Usage extension of a certificate to state that
+# it can be used for Adobe Certified Document Signing. See
+# <https://www.adobe.com/devnet-docs/acrobatetk/tools/DigSig/oids.html>.
+adobeAuthenticDocumentsTrust = 1.2.840.113583.1.1.5
+# FIXME: EU qualified certificates!
+
+# ----------------------------------------------------------------------------
+# OpenSSL CA profiles.
+
+# Profile for the root certification authority.
+[rootca]
+# Set the standard OpenSSL directory structure.
+dir = ./rootca
+new_certs_dir = $dir/newcerts
+certificate = $dir/ca.cer
+private_key = $dir/ca.pvk
+database = $dir/index
+serial = $dir/serial
+crlnumber = $dir/crlserial
+
+default_days = x
+default_crl_days = x # 7 per subscr, 12 mesi altro
+default_md = x
+# Allow intermediate certificates with the same subject to ease CA rollovers.
+unique_subject = no
+# Do not preserve DN components not appearing in the policy.
+preserve = no
+# Do not add the e-mail address to the DN (deprecated).
+email_in_dn = no
+# Do not copy any extensions from the certificate request. For security, set
+# them manually here instead.
+copy_extensions = none
+
+# Set the certificate/CRL extensions and the DN policy.
+x509_extensions = sect
+crl_extensions = rootca_crl_extensions
+policy = intermediateca_dn_policy
+
+# Show (almost) all DN/certificate details when performing a signing operation.
+name_opt = ca_default
+cert_opt = ca_default
+
+# key size: 2048, o nist p-256,384,521
+# durata subscr 39 mesi
+
+# ----------------------------------------------------------------------------
+# OpenSSL DN policies.
+
+[rootca_dn_policy]
+# countryName and organizationName are mandatory per CAB section 7.1.2.1.
+countryName = supplied
+organizationName = supplied
+commonName = supplied
+
+[intermediateca_dn_policy]
+# countryName and organizationName are mandatory per CAB section 7.1.2.2.
+countryName = supplied
+organizationName = supplied
+commonName = supplied
+
+[webserver_individual_dn_policy]
+# Fields set per CAB section 7.1.4.2.2.
+# Required if (O, name or surname are present); optional otherwise.
+countryName = optional
+# Mandatory if (O, name or surname are present) and localityName is absent;
+# prohibited if O, name and surname are absent; optional otherwise.
+stateOrProvinceName = optional
+# Mandatory if (O, name or surname are present) and stateOrProvinceName is
+# absent; prohibited if O, name and surname are absent; optional otherwise.
+localityName = optional
+# Prohibited if O, name and surname are absent; optional otherwise.
+postalCode = optional
+# The O field might convey the name and surname of the natural person.
+organizationName = optional
+organizationalUnitName = optional
+commonName = optional
+givenName = optional
+surname = optional
+# The street address is prohibited if the O, name or surname fields are absent.
+streetAddress = optional
+
+[webserver_organization_dn_policy]
+# Fields set per CAB section 7.1.4.2.2.
+# Required if O is present; optional otherwise.
+countryName = optional
+# Mandatory if O is present and localityName is absent; prohibited if O is
+# absent; optional otherwise.
+stateOrProvinceName = optional
+# Mandatory if O is present and stateOrProvinceName is absent; prohibited if
+# O is absent; optional otherwise.
+localityName = optional
+# Prohibited if O is absent; optional otherwise.
+postalCode = optional
+organizationName = optional
+organizationalUnitName = optional
+commonName = optional
+# The street address is prohibited if O is absent.
+streetAddress = optional
+
+# ----------------------------------------------------------------------------
+# OpenSSL X509 extension configurations.
+
+[rootca_x509_extensions]
+# The authority key identifier is omitted per RFC 5280, section 4.2.1.1., since
+# this is a self-signed certificate. Add only the subject key identifier
+# instead.
+subjectKeyIdentifier = hash
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. + CAB section
+# 7.1.2.1. Add digitalSignature if the key will be used for signing OCSP
+# responses directly (not recommended).
+keyUsage = critical, keyCertSign, cRLSign
+# certificatePolicies/extendedKeyUsage: not present per CAB section 7.1.2.1.
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.1.
+basicConstraints = critical, CA:TRUE
+# TODO: nameConstraints as critical
+
+[intermediateca_webserver_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. + CAB section
+# 7.1.2.2. Add digitalSignature if the key will be used for signing OCSP
+# responses directly (not recommended).
+keyUsage = critical, keyCertSign, cRLSign
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.2.
+certificatePolicies = OID, @ca_certpolicy
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.2.
+# Also allow only end entity certificate issuance
+basicConstraints = critical, CA:TRUE, pathlen:0
+# extendedKeyUsage: RFC 5280, section 4.2.1.12. + CAB section 7.1.2.2.
+# Allow leaf certificates to be used only for the purposes named below.
+extendedKeyUsage = serverAuth, clientAuth
+# TODO: nameConstraints as critical - CAB section 7.1.2.2.
+# crlDistributionPoints: RFC 5280, section 4.2.1.13. + CAB section 7.1.2.2.
+# The URI MUST point to a single DER encoded CRL with MIME type
+# application/pkix-crl (also, serve them over HTTP, or over HTTPS as long as
+# there are no cycles)
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.2.
+# The caIssuers path should serve a single DER-encoded certificate with MIME
+# type application/pkix-cert.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/root.cer
+
+[intermediateca_codesigning_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. + CAB section
+# 7.1.2.2. Add digitalSignature if the key will be used for signing OCSP
+# responses directly (not recommended).
+keyUsage = critical, keyCertSign, cRLSign
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.2.
+certificatePolicies = OID, @ca_certpolicy
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.2.
+# Also allow only end entity certificate issuance
+basicConstraints = critical, CA:TRUE, pathlen:0
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# Allow leaf certificates to be used only for the purposes named below.
+# TODO: critical?
+extendedKeyUsage = codeSigning
+# crlDistributionPoints: RFC 5280, section 4.2.1.13. + CAB section 7.1.2.2.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.2.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/root.cer
+
+[intermediateca_personalcert_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. + CAB section
+# 7.1.2.2. Add digitalSignature if the key will be used for signing OCSP
+# responses directly (not recommended).
+keyUsage = critical, keyCertSign, cRLSign
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.2.
+certificatePolicies = OID, @ca_certpolicy
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.2.
+# Also allow only end entity certificate issuance
+basicConstraints = critical, CA:TRUE, pathlen:0
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# Allow leaf certificates to be used only for the purposes named below.
+# TODO: critical?
+extendedKeyUsage = clientAuth, emailProtection, adobeAuthenticDocumentsTrust
+# crlDistributionPoints: RFC 5280, section 4.2.1.13. + CAB section 7.1.2.2.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.2.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/root.cer
+
+[intermediateca_qualifiedcert_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. + CAB section
+# 7.1.2.2. Add digitalSignature if the key will be used for signing OCSP
+# responses directly (not recommended).
+keyUsage = critical, keyCertSign, cRLSign
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.2.
+certificatePolicies = OID, @ca_certpolicy
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.2.
+# Also allow only end entity certificate issuance
+basicConstraints = critical, CA:TRUE, pathlen:0
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# Allow leaf certificates to be used only for the purposes named below.
+# TODO: critical? Also find out the values
+# extendedKeyUsage = clientAuth, emailProtection, adobeAuthenticDocumentsTrust
+# crlDistributionPoints: RFC 5280, section 4.2.1.13. + CAB section 7.1.2.2.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.2.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/root.cer
+
+[intermediateca_timestamping_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. + CAB section
+# 7.1.2.2. Add digitalSignature if the key will be used for signing OCSP
+# responses directly (not recommended).
+keyUsage = critical, keyCertSign, cRLSign
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.2.
+certificatePolicies = OID, @ca_certpolicy
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.2.
+# Also allow only end entity certificate issuance
+basicConstraints = critical, CA:TRUE, pathlen:0
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# Allow leaf certificates to be used only for the purposes named below.
+# TODO: critical?
+extendedKeyUsage = timeStamping
+# crlDistributionPoints: RFC 5280, section 4.2.1.13. + CAB section 7.1.2.2.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.2.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/root.cer
+
+[webserver_dv_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. Keys will be used
+# only to sign data/encipher session keys.
+keyUsage = critical, digitalSignature, keyEncipherment
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.3.
+certificatePolicies = OID, @endentity_certpolicy
+# subjectAlternativeName: RFC 5280, section 4.2.1.6. + CAB section 7.1.4.2.1.
+# IP addresses are allowed.
+subjectAltName = DNS:my.domain.name
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.3.
+# TODO: mark as critical?
+basicConstraints = critical, CA:FALSE
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# TODO: critical?
+extendedKeyUsage = serverAuth, clientAuth
+# crlDistributionPoints: RFC 5280, section 4.2.1.13.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.3.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/webserver_dv.cer
+
+[webserver_personal_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. Keys will be used
+# only to sign data/encipher session keys.
+keyUsage = critical, digitalSignature, keyEncipherment
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.3.
+certificatePolicies = OID, @endentity_certpolicy
+# subjectAlternativeName: RFC 5280, section 4.2.1.6. + CAB section 7.1.4.2.1.
+# IP addresses are allowed.
+subjectAltName = DNS:my.domain.name
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.3.
+# TODO: mark as critical?
+basicConstraints = critical, CA:FALSE
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# TODO: critical?
+extendedKeyUsage = serverAuth, clientAuth
+# crlDistributionPoints: RFC 5280, section 4.2.1.13.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.3.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/webserver_personal.cer
+
+[webserver_organization_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. Keys will be used
+# only to sign data/encipher session keys.
+keyUsage = critical, digitalSignature, keyEncipherment
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.3.
+certificatePolicies = OID, @endentity_certpolicy
+# subjectAlternativeName: RFC 5280, section 4.2.1.6. + CAB section 7.1.4.2.1.
+# IP addresses are allowed.
+subjectAltName = DNS:my.domain.name
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.3.
+# TODO: mark as critical?
+basicConstraints = critical, CA:FALSE
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# TODO: critical?
+extendedKeyUsage = serverAuth, clientAuth
+# crlDistributionPoints: RFC 5280, section 4.2.1.13.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.3.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/webserver_organization.cer
+
+[webserver_ev_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. Keys will be used
+# only to sign data/encipher session keys.
+keyUsage = critical, digitalSignature, keyEncipherment
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.3.
+certificatePolicies = OID, @endentity_certpolicy
+# subjectAlternativeName: RFC 5280, section 4.2.1.6. + CAB section 7.1.4.2.1.
+# TODO: IP addresses?
+subjectAltName = DNS:my.domain.name
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.3.
+# TODO: mark as critical?
+basicConstraints = critical, CA:FALSE
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# TODO: critical?
+extendedKeyUsage = serverAuth, clientAuth
+# crlDistributionPoints: RFC 5280, section 4.2.1.13.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.3.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/webserver_ev.cer
+
+[codesigning_personal_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. Keys will be used
+# only to sign data.
+keyUsage = critical, digitalSignature
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.3.
+certificatePolicies = OID, @endentity_certpolicy
+# TODO: subjectAltName for e-mail?
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.3.
+# TODO: mark as critical?
+basicConstraints = critical, CA:FALSE
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# TODO: critical?
+extendedKeyUsage = codeSigning
+# TODO: msCodeInd
+# crlDistributionPoints: RFC 5280, section 4.2.1.13.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.3.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/codesigning_personal.cer
+# TODO: subjectInfoAccess for timestamps?
+
+[codesigning_organization_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. Keys will be used
+# only to sign data.
+keyUsage = critical, digitalSignature
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.3.
+certificatePolicies = OID, @endentity_certpolicy
+# TODO: subjectAltName for e-mail?
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.3.
+# TODO: mark as critical?
+basicConstraints = critical, CA:FALSE
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# TODO: critical?
+extendedKeyUsage = codeSigning
+# TODO: msCodeCom
+# crlDistributionPoints: RFC 5280, section 4.2.1.13.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.3.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/codesigning_organization.cer
+# TODO: subjectInfoAccess for timestamps?
+
+[personalcert_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. Keys will be used
+# only to sign data/encipher session keys for client authentication.
+keyUsage = critical, digitalSignature, keyEncipherment
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.3.
+certificatePolicies = OID, @endentity_certpolicy
+# subjectAlternativeName: RFC 5280, section 4.2.1.6.
+subjectAltName = email:my@address.example.com
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.3.
+# TODO: mark as critical?
+basicConstraints = critical, CA:FALSE
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# TODO: critical?
+extendedKeyUsage = clientAuth, emailProtection, adobeAuthenticDocumentsTrust
+# crlDistributionPoints: RFC 5280, section 4.2.1.13.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.3.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/personal.cer
+
+[qualifiedcert_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. Keys will be used
+# only to sign data (signatures done with a qualified certificate can not be
+# repudiated).
+keyUsage = critical, digitalSignature, nonRepudiation
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.3.
+certificatePolicies = OID, @endentity_certpolicy
+# subjectAlternativeName: RFC 5280, section 4.2.1.6.
+subjectAltName = email:my@address.example.com
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.3.
+# TODO: mark as critical?
+basicConstraints = critical, CA:FALSE
+# TODO: extended key usage + adobeAuthenticDocumentsTrust
+# crlDistributionPoints: RFC 5280, section 4.2.1.13.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.3.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/qualified.cer
+# TODO: subjectInfoAccess for timestamps?
+
+[timestamping_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. Keys will be used
+# only to sign data.
+# TODO: check this!
+keyUsage = critical, digitalSignature
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.3.
+certificatePolicies = OID, @endentity_certpolicy
+# TODO: subjectAltName for e-mail?
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.3.
+# TODO: mark as critical?
+basicConstraints = critical, CA:FALSE
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# TODO: timestamping only
+# crlDistributionPoints: RFC 5280, section 4.2.1.13.
+crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.3.
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/,caIssuers;URI:http://my.ca/codesigning_timestamping.cer
+
+# TODO: duplicate for each CA
+[ocspresponder_x509_extensions]
+# Add unique subject/authority key identifiers per RFC 5280, section 4.2.1.1.
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# keyUsage: marked critical per RFC 5280, section 4.2.1.3. Keys will be used
+# only to sign data.
+# TODO: check this!
+keyUsage = critical, digitalSignature
+# certificatePolicies: RFC 5280, section 4.2.1.4. + CAB section 7.1.2.3.
+certificatePolicies = OID, @endentity_certpolicy
+# TODO: subjectAltName for e-mail?
+# basicConstraints: RFC 5280, section 4.2.1.9. + CAB section 7.1.2.3.
+# TODO: mark as critical?
+basicConstraints = critical, CA:FALSE
+# extendedKeyUsage: RFC 5280, section 4.2.1.12.
+# TODO: OCSP signing only
+# crlDistributionPoints: RFC 5280, section 4.2.1.13.
+# TODO: add?
+# crlDistributionPoints=URI:http://myhost.com/myca.crl
+# Authority Information Access: RFC 5280, section 4.2.2.1. + CAB section 7.1.2.3.
+authorityInfoAccess = caIssuers;URI:http://my.ca/ocsp.cer
+
+# ----------------------------------------------------------------------------
+# OpenSSL CRL extension configurations.
+
+[rootca_crl_extensions]
+authorityKeyIdentifier = keyid:always
+# Authority Information Access: RFC 5280, section 4.2.2.1.
+authorityInfoAccess = caIssuers;URI:http://my.ca/root.cer
+
+# ----------------------------------------------------------------------------
+# OpenSSL certificate policies.
+# See RFC 5280, section 4.2.1.4.
+
+[ca_certpolicy]
+policyIdentifier = CA_OID
+CPS.1 = "https://url.to.CPS/"
+
+[endentity_certpolicy]
+policyIdentifier = CA_OID
+CPS.1 = "https://url.to.CPS/"
+# In case multiple user notices are found as a result of path validation,
+# according to RFC 5280 all of them should be shown; hence, we only include
+# them in end entity certificates to avoid duplication.
+# The notice should be at most 200 characters long
+userNotice.1 = explicitText:"Explicit text here"
