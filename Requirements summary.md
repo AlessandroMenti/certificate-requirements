@@ -35,23 +35,23 @@ The following documents are referenced in this file:
 * **MRSP**: [*Mozilla Root Store Policy, version 2.4.1*](https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/policy/)
 * **MTRPR**: [*Microsoft Trusted Root Program Requirements, version 2.0*](http://aka.ms/RootCert)
 * **RFC 3161**: [*Internet X.509 Public Key Infrastructure Time-Stamp Protocol
-  (TSP)*](https://datatracker.ietf.org/doc/RFC 3161/)
+  \(TSP\)*](https://datatracker.ietf.org/doc/rfc3161/)
 * **RFC 4055**: [*Additional Algorithms and Identifiers for RSA Cryptography
   for use in the Internet X.509 Public Key Infrastructure Certificate and
-  Certificate Revocation List (CRL) Profile*](https://datatracker.ietf.org/doc/rfc4055/)
+  Certificate Revocation List \(CRL\) Profile*](https://datatracker.ietf.org/doc/rfc4055/)
 * **RFC 4491**: [*Using the GOST R 34.10-94, GOST R 34.10-2001, and GOST R
   34.11-94 Algorithms with the Internet X.509 Public Key Infrastructure
   Certificate and CRL Profile*](https://datatracker.ietf.org/doc/rfc4491/)
 * **RFC 5246**: [*The Transport Layer Security (TLS) Protocol Version
   1.2*](https://datatracker.ietf.org/doc/rfc5246/)
 * **RFC 5280**: [*Internet X.509 Public Key Infrastructure Certificate and
-  Certificate Revocation List (CRL) Profile*](https://datatracker.ietf.org/doc/RFC 5280/).
+  Certificate Revocation List \(CRL\) Profile*](https://datatracker.ietf.org/doc/rfc5280/).
   This is *the* main source for certificate profile details; I recommend to
   read this document in its entirety.
 * **RFC 5480**: [*Elliptic Curve Cryptography Subject Public Key
   Information*](https://datatracker.ietf.org/doc/rfc5480/)
-* **RFC 5750**: [*Secure/Multipurpose Internet Mail Extensions (S/MIME) Version
-  3.2 Certificate Handling*](https://datatracker.ietf.org/doc/RFC 5750/)
+* **RFC 5750**: [*Secure/Multipurpose Internet Mail Extensions \(S/MIME\) Version
+  3.2 Certificate Handling*](https://datatracker.ietf.org/doc/rfc5750/)
 * **RFC 5756**: [*Updates for RSAES-OAEP and RSASSA-PSS Algorithm
   Parameters*](https://datatracker.ietf.org/doc/rfc5756/)
 * **RFC 5758**: [*Internet X.509 Public Key Infrastructure: Additional
@@ -360,7 +360,7 @@ These requirements apply to all profiles listed in the rest of this document.
   be present (BR, section 7.1.2.3, overridden by some more specific certificate
   profiles; MTRPR, section 4.A.18)
 * The Subject Alternative Name MUST be present, MUST contain at least one domain
-  entry, each of which MUST be either a dNSName containing an FQDN or an
+  entry, each of which MUST be either a `dNSName` containing an FQDN or an
   `iPAddress` containing the IP address of a server; wildcard FQDNs are
   permitted, reserved IP addresses and internal names are prohibited (BR,
   section 7.1.4.2.1)
@@ -523,10 +523,10 @@ member state might impose additional requirements.**
   algorithm used:
 
     Algorithm          | Bits to enable
-    -------------------|---------------
-    RSA, RSA/PSK       | keyEncipherment
-    DHE_RSA, ECDHE_RSA | digitalSignature
-    DH_DSS, DH_RSA     | keyAgreement
+    -------------------|-------------------
+    RSA, RSA/PSK       | `keyEncipherment`
+    DHE_RSA, ECDHE_RSA | `digitalSignature`
+    DH_DSS, DH_RSA     | `keyAgreement`
 
     (RFC 5246, section 7.4.2)
 
@@ -548,10 +548,10 @@ member state might impose additional requirements.**
   algorithm used:
 
     Algorithm          | Bits to enable
-    -------------------|---------------
-    RSA, RSA/PSK       | keyEncipherment
-    DHE_RSA, ECDHE_RSA | digitalSignature
-    DH_DSS, DH_RSA     | keyAgreement
+    -------------------|-------------------
+    RSA, RSA/PSK       | `keyEncipherment`
+    DHE_RSA, ECDHE_RSA | `digitalSignature`
+    DH_DSS, DH_RSA     | `keyAgreement`
 
     (RFC 5246, section 7.4.2)
 
@@ -818,7 +818,7 @@ member state might impose additional requirements.**
   Extended Key Usage extension that includes `id-kp-OCSPSigning` as a value
   (RFC 6960, section 4.2.2.2, and BR, section 4.9.9)
 * If a dedicated certificate is used, it MUST include a non-critical extension
-  "id-pkix-ocsp-nocheck" with a `NULL` value (to specify that no revocation
+  `id-pkix-ocsp-nocheck` with a `NULL` value (to specify that no revocation
   checking should be performed on that certificate); for this reason, in this
   case, the certificate lifetime should be short (RFC 6960, section 4.2.2.2.1,
   and BR, section 4.9.9)
