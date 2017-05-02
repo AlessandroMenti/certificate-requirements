@@ -1,0 +1,178 @@
+# Copyright © 2017 Alessandro Menti
+#
+# This file is licensed under the terms and conditions of the MIT license.
+# See the LICENSE file for more details.
+
+# OpenSSL configuration file for time stamping CAs.
+
+oid_file = additional_oids
+
+[ca]
+default_ca = timestamping_ca
+
+[req]
+default_bits = 4096
+default_md = sha256
+string_mask = utf8only
+prompt = no
+# Change the distinguished name section to use depending on the subordinate CA
+# you generate.
+distinguished_name = timestamping_distinguished_name
+
+# Edit the following sections as needed. Note that not all optional fields are
+# populated here: check the DN profiles to know the admissible ones.
+[timestamping_distinguished_name]
+countryName = "IT"
+postalCode = "12345"
+stateOrProvinceName = "AA"
+localityName = "Locality"
+organizationName = "My CA"
+commonName = "My CA Time Stamping Service"
+
+[timestamping-extendedvalidation_distinguished_name]
+countryName = "IT"
+postalCode = "12345"
+stateOrProvinceName = "AA"
+localityName = "Locality"
+jurisdictionCountryName = "IT"
+serialNumber = "12345678"
+businessCategory = "Private Organization"
+organizationName = "My CA"
+commonName = "My CA Extended Validation Time Stamping Service"
+
+# ----------------------------------------------------------------------------
+[timestamping_ca]
+dir = ./timestamping
+database = $dir/index
+serial = $dir/serial
+crlnumber = $dir/crlserial
+certificate = $dir/timestampingca.cer
+private_key = $dir/timestampingca.pvk
+new_certs_dir = $dir/newcerts
+
+# Choose SHA-256 as the hash algorithm.
+default_md = sha256
+
+# Make certificates valid for 4050 days (~135 months)  and CRLs valid for seven
+# days.
+# Remember that keypairs must be used at most for 15 months
+default_days = 4050
+default_crl_days = 7
+
+# To ease key rollover, allow certificates to have the same Subject DN and be
+# valid at the same time.
+unique_subject = no
+# Only add the DN components/extensions we specify here to the issued
+# certificates.
+preserve = no
+copy_extensions = none
+email_in_dn = no
+policy = timestamping_dn_policy
+# Show (almost all) details when signing a certificate request.
+name_opt = ca_default
+cert_opt = ca_default
+
+x509_extensions = timestamping_certificate_extensions
+crl_extensions = timestamping_crl_extensions
+
+# Extensions for time stamping certificates.
+[timestamping_certificate_extensions]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature
+extendedKeyUsage = critical,timeStamping
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# Replace the URLs here
+authorityInfoAccess = OCSP;URI:http://myca.example.com/ocsp/timestampingca,caIssuers;URI:http://myca.example.com/repository/timestampingca.cer
+crlDistributionPoints = URI:http://myca.example.com/repository/timestampingca.crl
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabCSGuidelines" to the line below.
+certificatePolicies = @polsect
+
+[timestamping_dn_policy]
+commonName = supplied
+organizationalUnitName = optional
+organizationName = supplied # must contain the legal name
+streetAddress = optional
+localityName = supplied
+stateOrProvinceName = optional
+postalCode = optional
+countryName = supplied
+
+[timestamping_crl_extensions]
+# Replace the URL here
+authorityInfoAccess = caIssuers;URI:http://myca.example.com/repository/timestampingca.cer
+authorityKeyIdentifier = keyid:always
+# ----------------------------------------------------------------------------
+[timestamping-extendedvalidation_ca]
+dir = ./timestamping-extendedvalidation
+database = $dir/index
+serial = $dir/serial
+crlnumber = $dir/crlserial
+certificate = $dir/timestamping-extendedvalidationca.cer
+private_key = $dir/timestamping-extendedvalidationca.pvk
+new_certs_dir = $dir/newcerts
+
+# Choose SHA-256 as the hash algorithm.
+default_md = sha256
+
+# Make certificates valid for 4050 days (~135 months)  and CRLs valid for seven
+# days.
+# Remember that keypairs must be used at most for 15 months
+default_days = 4050
+default_crl_days = 7
+
+# To ease key rollover, allow certificates to have the same Subject DN and be
+# valid at the same time.
+unique_subject = no
+# Only add the DN components/extensions we specify here to the issued
+# certificates.
+preserve = no
+copy_extensions = none
+email_in_dn = no
+policy = timestamping-extendedvalidation_dn_policy
+# Show (almost all) details when signing a certificate request.
+name_opt = ca_default
+cert_opt = ca_default
+
+x509_extensions = timestamping-extendedvalidation_certificate_extensions
+crl_extensions = timestamping-extendedvalidation_crl_extensions
+
+# Extensions for time stamping certificates.
+[timestamping-extendedvalidation_certificate_extensions]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature
+extendedKeyUsage = critical,timeStamping
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# Replace the URLs here
+authorityInfoAccess = OCSP;URI:http://myca.example.com/ocsp/timestamping-extendedvalidationca,caIssuers;URI:http://myca.example.com/repository/timestamping-extendedvalidationca.cer
+crlDistributionPoints = URI:http://myca.example.com/repository/timestamping-extendedvalidationca.crl
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabEVGuidelines" to the line below.
+certificatePolicies = @polsect
+
+[timestamping-extendedvalidation_dn_policy]
+commonName = supplied
+organizationName = supplied
+businessCategory = supplied
+serialNumber = supplied
+jurisdictionLocalityName = optional
+jurisdictionStateOrProvinceName = optional
+jurisdictionCountryName = supplied
+streetAddress = optional
+localityName = supplied
+stateOrProvinceName = supplied
+postalCode = optional
+countryName = supplied
+
+[timestamping-extendedvalidation_crl_extensions]
+# Replace the URL here
+authorityInfoAccess = caIssuers;URI:http://myca.example.com/repository/timestamping-extendedvalidationca.cer
+authorityKeyIdentifier = keyid:always
+# ----------------------------------------------------------------------------
+[polsect]
+# Replace myCPSOID with the OID associated to your CPS.
+policyIdentifier = 1.2.3.4
+# Replace the following URL with the one pointing to your CPS.
+CPS.1 = "http://myca.example.com/repository/cps.pdf"

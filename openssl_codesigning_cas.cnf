@@ -1,0 +1,228 @@
+# Copyright © 2017 Alessandro Menti
+#
+# This file is licensed under the terms and conditions of the MIT license.
+# See the LICENSE file for more details.
+
+# OpenSSL configuration file for code signing CAs.
+
+oid_file = additional_oids
+
+[ca]
+default_ca = codesigning-individualvalidated_ca
+
+[req]
+default_bits = 4096
+default_md = sha256
+string_mask = utf8only
+distinguished_name = req_dn
+
+[req_dn]
+commonName = "Full name"
+organizationalUnitName = "Organizational unit"
+organizationName = "Organization name"
+businessCategory = "Business category"
+serialNumber = "Identification number"
+jurisdictionLocalityName = "Jurisdiction locality"
+jurisdictionStateOrProvinceName = "Jurisdiction state or province"
+jurisdictionCountryName = "Jurisdiction country"
+streetAddress = "Street address"
+localityName = "Locality"
+stateOrProvinceName = "State or Province"
+postalCode = "ZIP code"
+countryName = "Country"
+countryName_min = 2
+countryName_max = 2
+
+# ----------------------------------------------------------------------------
+[codesigning-individualvalidated_ca]
+dir = ./codesigning-individualvalidated
+database = $dir/index
+serial = $dir/serial
+crlnumber = $dir/crlserial
+certificate = $dir/codesigning-individualvalidatedca.cer
+private_key = $dir/codesigning-individualvalidatedca.pvk
+new_certs_dir = $dir/newcerts
+
+# Choose SHA-256 as the hash algorithm.
+default_md = sha256
+
+# Make certificates valid for a year and CRLs valid for seven days.
+default_days = 365
+default_crl_days = 7
+
+# To ease key rollover, allow certificates to have the same Subject DN and be
+# valid at the same time.
+unique_subject = no
+# Only add the DN components/extensions we specify here to the issued
+# certificates.
+preserve = no
+copy_extensions = none
+email_in_dn = no
+policy = codesigning-individualvalidated_dn_policy
+# Show (almost all) details when signing a certificate request.
+name_opt = ca_default
+cert_opt = ca_default
+
+x509_extensions = codesigning-individualvalidated_certificate_extensions
+crl_extensions = codesigning-individualvalidated_crl_extensions
+
+# Extensions for code signing, individual validated certificates.
+[codesigning-individualvalidated_certificate_extensions]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature
+extendedKeyUsage = codeSigning
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# Replace the URLs here
+authorityInfoAccess = OCSP;URI:http://myca.example.com/ocsp/codesigning-individualvalidatedca,caIssuers;URI:http://myca.example.com/repository/codesigning-individualvalidatedca.cer
+crlDistributionPoints = URI:http://myca.example.com/repository/codesigning-individualvalidatedca.crl
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabCSGuidelines" to the line below.
+certificatePolicies = @polsect
+
+[codesigning-individualvalidated_dn_policy]
+commonName = supplied
+organizationalUnitName = optional
+organizationName = supplied # must contain the legal name
+streetAddress = optional
+localityName = supplied
+stateOrProvinceName = optional
+postalCode = optional
+countryName = supplied
+
+[codesigning-individualvalidated_crl_extensions]
+# Replace the URL here
+authorityInfoAccess = caIssuers;URI:http://myca.example.com/repository/codesigning-individualvalidatedca.cer
+authorityKeyIdentifier = keyid:always
+# ----------------------------------------------------------------------------
+[codesigning-organizationalvalidated_ca]
+dir = ./codesigning-organizationalvalidated
+database = $dir/index
+serial = $dir/serial
+crlnumber = $dir/crlserial
+certificate = $dir/codesigning-organizationalvalidatedca.cer
+private_key = $dir/codesigning-organizationalvalidatedca.pvk
+new_certs_dir = $dir/newcerts
+
+# Choose SHA-256 as the hash algorithm.
+default_md = sha256
+
+# Make certificates valid for a year and CRLs valid for seven days.
+default_days = 365
+default_crl_days = 7
+
+# To ease key rollover, allow certificates to have the same Subject DN and be
+# valid at the same time.
+unique_subject = no
+# Only add the DN components/extensions we specify here to the issued
+# certificates.
+preserve = no
+copy_extensions = none
+email_in_dn = no
+policy = codesigning-organizationalvalidated_dn_policy
+# Show (almost all) details when signing a certificate request.
+name_opt = ca_default
+cert_opt = ca_default
+
+x509_extensions = codesigning-organizationalvalidated_certificate_extensions
+crl_extensions = codesigning-organizationalvalidated_crl_extensions
+
+# Extensions for code signing, individual validated certificates.
+[codesigning-organizationalvalidated_certificate_extensions]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature
+extendedKeyUsage = codeSigning
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# Replace the URLs here
+authorityInfoAccess = OCSP;URI:http://myca.example.com/ocsp/codesigning-organizationalvalidatedca,caIssuers;URI:http://myca.example.com/repository/codesigning-organizationalvalidatedca.cer
+crlDistributionPoints = URI:http://myca.example.com/repository/codesigning-organizationalvalidatedca.crl
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabCSGuidelines" to the line below.
+certificatePolicies = @polsect
+
+[codesigning-organizationalvalidated_dn_policy]
+commonName = supplied
+organizationalUnitName = optional
+organizationName = supplied # must contain the legal name
+streetAddress = optional
+localityName = supplied
+stateOrProvinceName = optional
+postalCode = optional
+countryName = supplied
+
+[codesigning-organizationalvalidated_crl_extensions]
+# Replace the URL here
+authorityInfoAccess = caIssuers;URI:http://myca.example.com/repository/codesigning-organizationalvalidatedca.cer
+authorityKeyIdentifier = keyid:always
+# ----------------------------------------------------------------------------
+[codesigning-extendedvalidation_ca]
+dir = ./codesigning-extendedvalidation
+database = $dir/index
+serial = $dir/serial
+crlnumber = $dir/crlserial
+certificate = $dir/codesigning-extendedvalidationca.cer
+private_key = $dir/codesigning-extendedvalidationca.pvk
+new_certs_dir = $dir/newcerts
+
+# Choose SHA-256 as the hash algorithm.
+default_md = sha256
+
+# Make certificates valid for a year and CRLs valid for seven days.
+default_days = 365
+default_crl_days = 7
+
+# To ease key rollover, allow certificates to have the same Subject DN and be
+# valid at the same time.
+unique_subject = no
+# Only add the DN components/extensions we specify here to the issued
+# certificates.
+preserve = no
+copy_extensions = none
+email_in_dn = no
+policy = codesigning-extendedvalidation_dn_policy
+# Show (almost all) details when signing a certificate request.
+name_opt = ca_default
+cert_opt = ca_default
+
+x509_extensions = codesigning-extendedvalidation_certificate_extensions
+crl_extensions = codesigning-extendedvalidation_crl_extensions
+
+# Extensions for code signing, individual validated certificates.
+[codesigning-extendedvalidation_certificate_extensions]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature
+extendedKeyUsage = codeSigning
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+# Replace the URLs here
+authorityInfoAccess = OCSP;URI:http://myca.example.com/ocsp/codesigning-extendedvalidationca,caIssuers;URI:http://myca.example.com/repository/codesigning-extendedvalidationca.cer
+crlDistributionPoints = URI:http://myca.example.com/repository/codesigning-extendedvalidationca.crl
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabEVGuidelines" to the line below.
+certificatePolicies = @polsect
+
+[codesigning-extendedvalidation_dn_policy]
+commonName = supplied
+organizationName = supplied
+businessCategory = supplied
+serialNumber = supplied
+jurisdictionLocalityName = optional
+jurisdictionStateOrProvinceName = optional
+jurisdictionCountryName = supplied
+streetAddress = optional
+localityName = supplied
+stateOrProvinceName = supplied
+postalCode = optional
+countryName = supplied
+
+[codesigning-extendedvalidation_crl_extensions]
+# Replace the URL here
+authorityInfoAccess = caIssuers;URI:http://myca.example.com/repository/codesigning-extendedvalidationca.cer
+authorityKeyIdentifier = keyid:always
+# ----------------------------------------------------------------------------
+[polsect]
+# Replace myCPSOID with the OID associated to your CPS.
+policyIdentifier = 1.2.3.4
+# Replace the following URL with the one pointing to your CPS.
+CPS.1 = "http://myca.example.com/repository/cps.pdf"

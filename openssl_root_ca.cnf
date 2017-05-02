@@ -1,0 +1,334 @@
+# Copyright © 2017 Alessandro Menti
+#
+# This file is licensed under the terms and conditions of the MIT license.
+# See the LICENSE file for more details.
+
+# OpenSSL configuration file for a root CA.
+
+# Replace the URLs with the paths to your OCSP responder and to the root CA
+# certificate/current CRL.
+OCSP_RESPONDER = http://myca.example.com/ocsp/rootca
+ROOT_CA_CERTIFICATE = http://myca.example.com/repository/rootca.cer
+ROOT_CA_CRL = http://myca.example.com/repository/rootca.crl
+
+oid_file = additional_oids
+
+[ca]
+default_ca = root_ca
+
+[req]
+default_bits = 4096
+default_md = sha256
+string_mask = utf8only
+prompt = no
+# Change the distinguished name section to use depending on the subordinate CA
+# you generate.
+distinguished_name = webserver-extendedvalidation_ca_distinguished_name
+
+[root_ca]
+dir = ./rootca
+database = $dir/index
+serial = $dir/serial
+crlnumber = $dir/crlserial
+certificate = $dir/rootca.cer
+private_key = $dir/rootca.pvk
+new_certs_dir = $dir/newcerts
+
+# Choose SHA-256 as the hash algorithm.
+default_md = sha256
+
+# Though there is no explicit provision for the duration of intermediate CA
+# certificates, rotating them every five years is a good practice.
+default_days = 1825
+default_crl_days = 365
+
+# To ease key rollover, allow certificates to have the same Subject DN and be
+# valid at the same time.
+unique_subject = no
+# Only add the DN components/extensions we specify here to the issued
+# certificates.
+preserve = no
+copy_extensions = none
+email_in_dn = no
+policy = root_ca_dn_policy
+# Show (almost all) details when signing a certificate request.
+name_opt = ca_default
+cert_opt = ca_default
+
+crl_extensions = root_ca_crl_extensions
+
+# Change the following DNs as needed.
+[root_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Root Certificate
+
+[personal-emailvalidated_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA E-mail Validated Personal CA
+
+[personal-individualvalidated_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Individual Validated Personal CA
+
+[personal-organizationvalidated_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Organization Validated Personal CA
+
+[webserver-domainvalidated_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Domain Validated Web Server CA
+
+[webserver-individualvalidated_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Individual Validated Web Server CA
+
+[webserver-organizationvalidated_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Organization Validated Web Server CA
+
+[webserver-extendedvalidation_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Extended Validation Web Server CA
+
+[codesigning-individualvalidated_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Individual Validated Code Signing CA
+
+[codesigning-organizationvalidated_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Organization Validated Code Signing CA
+
+[codesigning-extendedvalidation_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Extended Validation Code Signing CA
+
+[timestamping_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Time Stamping CA
+
+[timestamping-extendedvalidation_ca_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Extended Validation Time Stamping CA
+
+[ocspresponder_distinguished_name]
+countryName=IT
+organizationName=My CA
+commonName=My CA Root CA OCSP Responder
+
+# Extensions for the root CA certificate.
+[root_ca_extensions]
+basicConstraints = critical,CA:TRUE
+keyUsage = critical,keyCertSign,cRLSign
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+
+# Extensions for the personal, e-mail validated CA certificate. This CA will
+# only be able to issue client authentication and S/MIME certificates. OCSP
+# responses will be signed directly.
+[personal-emailvalidated_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = clientAuth,emailProtection
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = OCSP;URI:${OCSP_RESPONDER},caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabBRDomainValidated" to the line below.
+certificatePolicies = @root_ca_polsect
+# If you would like to restrict certificate issuance to a single e-mail
+# domain (recommended for internal CAs), uncomment the following line.
+# nameConstraints = critical,permitted;email:.example.com
+
+# Extensions for the personal, individual validated CA certificates. This CA
+# will only be able to issue client authentication, document/PDF signing and
+# S/MIME certificates. OCSP responses will be signed directly.
+[personal-individualvalidated_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = clientAuth,emailProtection,adobeAuthenticDocumentsTrust,kpDocumentSigning
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = OCSP;URI:${OCSP_RESPONDER},caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabBRIndividualValidated" to the line below.
+certificatePolicies = @root_ca_polsect
+# If you would like to restrict certificate issuance to a single e-mail
+# domain (recommended for internal CAs), uncomment the following line.
+# nameConstraints = critical,permitted;email:.example.com
+
+# Extensions for the personal, organization validated CA certificates. This CA
+# will only be able to issue client authentication, document/PDF signing and
+# S/MIME certificates. OCSP responses will be signed directly.
+[personal-organizationvalidated_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = clientAuth,emailProtection,adobeAuthenticDocumentsTrust,kpDocumentSigning
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = OCSP;URI:${OCSP_RESPONDER},caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabBROrganizationValidated" to the line below.
+certificatePolicies = @root_ca_polsect
+# If you would like to restrict certificate issuance to a single e-mail
+# domain (recommended for internal CAs), uncomment the following line.
+# nameConstraints = critical,permitted;email:.example.com
+
+# Extensions for the Web server, domain validated CA certificate. This CA will
+# only be able to issue client/server authentication certificates. OCSP
+# responses will be signed directly.
+[webserver-domainvalidated_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = clientAuth,serverAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = OCSP;URI:${OCSP_RESPONDER},caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabBRDomainValidated" to the line below.
+certificatePolicies = @root_ca_polsect
+# If you would like to restrict certificate issuance to a single domain
+# (recommended for internal CAs) and forbid certificate issuance to IP
+# addresses, uncomment the following line.
+# nameConstraints = critical,permitted;domain:.example.com,forbidden:IP:0.0.0.0/0,forbidden:IP:::0/0
+
+# Extensions for the Web server, individual validated CA certificate. This CA
+# will only be able to issue client/server authentication certificates. OCSP
+# responses will be signed directly.
+[webserver-individualvalidated_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = clientAuth,serverAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = OCSP;URI:${OCSP_RESPONDER},caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabBRIndividualValidated" to the line below.
+certificatePolicies = @root_ca_polsect
+# If you would like to restrict certificate issuance to a single domain
+# (recommended for internal CAs) and forbid certificate issuance to IP
+# addresses, uncomment the following line.
+# nameConstraints = critical,permitted;domain:.example.com,forbidden:IP:0.0.0.0/0,forbidden:IP:::0/0
+
+# Extensions for the Web server, organization validated CA certificate. This CA
+# will only be able to issue client/server authentication certificates. OCSP
+# responses will be signed directly.
+[webserver-organizationvalidated_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = clientAuth,serverAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = OCSP;URI:${OCSP_RESPONDER},caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabBROrganizationValidated" to the line below.
+certificatePolicies = @root_ca_polsect
+# If you would like to restrict certificate issuance to a single domain
+# (recommended for internal CAs) and forbid certificate issuance to IP
+# addresses, uncomment the following line.
+# nameConstraints = critical,permitted;domain:.example.com,forbidden:IP:0.0.0.0/0,forbidden:IP:::0/0
+
+# Extensions for the Web server, EV CA certificate. This CA will only be able
+# to issue client/server authentication certificates. OCSP responses will be
+# signed directly.
+[webserver-extendedvalidation_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = clientAuth,serverAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = OCSP;URI:${OCSP_RESPONDER},caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+certificatePolicies = @root_ca_polsect
+# If you would like to restrict certificate issuance to a single domain
+# (recommended for internal CAs) and forbid certificate issuance to IP
+# addresses, uncomment the following line.
+# nameConstraints = critical,permitted;domain:.example.com,forbidden:IP:0.0.0.0/0,forbidden:IP:::0/0
+
+# Extensions for the code signing CA certificates. These CAs will only be able
+# to issue code signing certificates. OCSP responses will be signed directly.
+[codesigning_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = codeSigning
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = OCSP;URI:${OCSP_RESPONDER},caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+# If you are following the validation practices mandated by the CA/Browser
+# Forum, add "cabCSGuidelines" to the line below.
+certificatePolicies = @root_ca_polsect
+
+# Extensions for the EV code signing CA certificates. These CAs will only be
+# able to issue code signing certificates. OCSP responses will be signed
+# directly.
+[codesigning-extendedvalidation_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = codeSigning
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = OCSP;URI:${OCSP_RESPONDER},caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+certificatePolicies = @root_ca_polsect
+
+# Extensions for the time stamping CA certificates. These CAs will only be able
+# to issue time stamping certificates. OCSP responses will be signed directly.
+[timestamping_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = timeStamping
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = OCSP;URI:${OCSP_RESPONDER},caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+certificatePolicies = @root_ca_polsect
+
+# Extensions for the root CA OCSP responder certificates.
+[root_ca_ocsp_responder_certificate_extensions]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature
+extendedKeyUsage = ocspSigning
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+authorityInfoAccess = caIssuers;URI:${ROOT_CA_CERTIFICATE}
+crlDistributionPoints = URI:${ROOT_CA_CRL}
+# If you would like to disable revocation checking entirely, uncomment the
+# noCheck attribute and comment crlDistributionPoints above. In that case,
+# the OCSP responder certificate should have a limited maximum validity (we
+# suggest a few days).
+# noCheck = ignored
+certificatePolicies = @root_ca_polsect
+
+[root_ca_dn_policy]
+countryName = match
+organizationName = match
+commonName = supplied
+
+[root_ca_polsect]
+# Replace myCPSOID with the OID associated to your CPS.
+policyIdentifier = 1.2.3.4
+# Replace the following URL with the one pointing to your CPS.
+CPS.1 = "http://myca.example.com/repository/cps.pdf"
+
+[root_ca_crl_extensions]
+authorityInfoAccess = caIssuers;URI:${ROOT_CA_CERTIFICATE}
+authorityKeyIdentifier = keyid:always
