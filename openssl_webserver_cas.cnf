@@ -255,6 +255,13 @@ cert_opt = ca_default
 x509_extensions = webserver-extendedvalidation_certificate_extensions
 crl_extensions = webserver-extendedvalidation_crl_extensions
 
+[webserver-extendedvalidation_ca_certificate_extensions]
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+extendedKeyUsage = clientAuth,serverAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+
 # Extensions for Web server, EV certificates.
 [webserver-extendedvalidation_certificate_extensions]
 basicConstraints = critical,CA:FALSE
