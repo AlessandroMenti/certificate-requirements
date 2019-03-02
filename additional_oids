@@ -1,9 +1,3 @@
-# Copyright © 2017 Alessandro Menti
-#
-# This file is licensed under the terms and conditions of the MIT license.
-# See the LICENSE file for more details.
-
-# Additional OIDs.
 1.2.840.113583.1.1.5 adobeAuthenticDocumentsTrust Adobe Authentic Documents Trust
 1.3.6.1.4.1.311.10.3.12 kpDocumentSigning Document Signing (Microsoft Corporation)
 1.3.6.1.4.1.11129.2.4.2 ctPrecertificateTimestampList Certificate Transparency Timestamp List
