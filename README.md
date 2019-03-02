@@ -13,13 +13,13 @@ risk.
 2. Generate the root CA by running the following commands:
 
     ```
-    mkdir -p rootca{,/newcerts}
-    echo 01 >rootca/crlserial
-    echo 01 >rootca/serial
-    touch rootca/index{,.attr}
+    mkdir -p root{,/newcerts}
+    echo 01 >root/crlserial
+    echo 01 >root/serial
+    touch root/index{,.attr}
     ROOTCASERIAL=$(cat /dev/urandom | tr -dc 'A-F0-9' | fold -w 16 | head -n 1)
-    openssl req -config openssl_root_ca.cnf -x509 -newkey rsa:4096 -sha256 -keyout rootca/rootca.pvk -out rootca/rootca.cer -days 3650 -set_serial 0x$ROOTCASERIAL -extensions root_ca_extensions
-    openssl x509 -in rootca/rootca.cer -out rootca/rootca_der.cer -outform DER
+    openssl req -config openssl_root_ca.cnf -x509 -newkey rsa:4096 -sha256 -keyout root/rootca.pvk -out root/rootca.cer -days 3650 -set_serial 0x$ROOTCASERIAL -extensions root_ca_extensions
+    openssl x509 -in root/rootca.cer -out root/rootca_der.cer -outform DER
     ```
 
 3. Generate the intermediate CAs you need by editing the `distinguished_name`
@@ -31,8 +31,8 @@ risk.
     echo 01 >CANAME/serial
     touch CANAME/index{,.attr}
     openssl req -config openssl_root_ca.cnf -new -newkey rsa:4096 -sha256 -keyout CANAME/CANAMEca.pvk -out CANAME/CANAMEca.req
-    cat /dev/urandom | tr -dc 'A-F0-9' | fold -w 16 | head -n 1 >rootca/serial
-    # Note: manually check that the serial is not already assigned to another certificate in rootca/index
+    cat /dev/urandom | tr -dc 'A-F0-9' | fold -w 16 | head -n 1 >root/serial
+    # Note: manually check that the serial is not already assigned to another certificate in root/index
     openssl ca -config openssl_root_ca.cnf -in CANAME/CANAMEca.req -out CANAME/CANAMEca.cer -policy root_ca_dn_policy -extensions CAEXTENSIONS
     openssl x509 -in CANAME/CANAMEca.cer -out CANAME/CANAMEca_der.cer -outform DER
     ```

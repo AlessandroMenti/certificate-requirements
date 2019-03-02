@@ -26,7 +26,7 @@ prompt = no
 distinguished_name = webserver-extendedvalidation_ca_distinguished_name
 
 [root_ca]
-dir = ./rootca
+dir = ./root
 database = $dir/index
 serial = $dir/serial
 crlnumber = $dir/crlserial
